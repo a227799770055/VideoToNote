@@ -27,6 +27,8 @@ class Config:
     DEFAULT_PROMPT: str = "這是一場演講的逐字稿，請你幫我整理成6000字的筆記"
     OPENAI_MODEL: str = "gpt-4o-mini"
     DEEPSEEK_MODEL: str = "deepseek-chat"
+    OLLAMA_MODEL: str = "llama3"
+    OLLAMA_API_URL: str = "http://localhost:11434/api/generate"
     
     def __post_init__(self):
         """確保必要的目錄存在"""
