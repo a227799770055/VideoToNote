@@ -36,7 +36,7 @@ class NotesGenerator:
         else:
             raise ValueError(f"Unsupported model choice: {self.model_choice}")
 
-    def generate_notes(self, transcription: Dict[str, Any}, prompt: str = None) -> Optional[str]:
+    def generate_notes(self, transcription: Dict[str, Any], prompt: str = None) -> Optional[str]:
         """
         從轉錄結果生成筆記
         
@@ -75,27 +75,41 @@ class NotesGenerator:
                 response = model.generate_content(full_prompt)
                 notes = response.text
             elif self.model_choice == 'ollama':
-                response = requests.post(
-                    self.api_url,
-                    json={
-                        "model": self.model_name,
-                        "prompt": full_prompt,
-                        "stream": False
-                    }
-                )
-                response.raise_for_status() # 如果請求失敗則拋出異常
-                notes = response.json().get('response', '')
-
-            print("筆記生成完成")
-            return notes
-            
-        except requests.exceptions.RequestException as e:
-            print(f"連接 Ollama API 時發生錯誤: {e}")
-            print("請確保 Ollama 服務正在運行，並且 API URL ({self.api_url}) 是正確的。")
-            return None
-        except Exception as e:
-            print(f"生成筆記時發生錯誤: {e}")
-            return None
+                notes = "" # Initialize notes
+                try:
+                    # Make the API call. Ollama will load the model if it's not already loaded.
+                    response = requests.post(
+                        self.api_url,
+                        json={
+                            "model": self.model_name,
+                            "prompt": full_prompt,
+                            "stream": False
+                        }
+                    )
+                    response.raise_for_status() # 如果請求失敗則拋出異常
+                    notes = response.json().get('response', '')
+                except requests.exceptions.RequestException as e:
+                    print(f"連接 Ollama API 時發生錯誤: {e}")
+                    print("請確保 Ollama 服務正在運行，並且 API URL ({self.api_url}) 是正確的。")
+                    return None
+                except Exception as e:
+                    print(f"生成筆記時發生錯誤: {e}")
+                    return None
+                finally:
+                    # Unload Ollama model to free up memory
+                    print(f"嘗試卸載 Ollama 模型: {self.model_name}...")
+                    try:
+                        unload_command = ["ollama", "unload", self.model_name]
+                        subprocess.run(unload_command, check=True, capture_output=True, text=True, timeout=10)
+                        print(f"Ollama 模型 {self.model_name} 卸載完成。")
+                    except FileNotFoundError:
+                        print("錯誤: 'ollama' 命令未找到。請確保 Ollama 已安裝並在系統 PATH 中。")
+                    except subprocess.CalledProcessError as e:
+                        print(f"卸載 Ollama 模型 {self.model_name} 失敗: {e.stderr}")
+                    except subprocess.TimeoutExpired:
+                        print(f"卸載 Ollama 模型 {self.model_name} 超時。")
+                    except Exception as e:
+                        print(f"卸載 Ollama 模型時發生未預期的錯誤: {e}")
 
     def save_notes(self, notes: str, audio_path: str) -> str:
         """

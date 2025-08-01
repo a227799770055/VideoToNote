@@ -29,7 +29,7 @@ class Config:
     OPENAI_MODEL: str = "gpt-4o-mini"
     DEEPSEEK_MODEL: str = "deepseek-chat"
     GEMINI_MODEL: str = "gemini-1.5-flash"
-    OLLAMA_MODEL: str = "llama3"
+    OLLAMA_MODEL: str = "qwen3"
     OLLAMA_API_URL: str = "http://localhost:11434/api/generate"
     
     def __post_init__(self):
