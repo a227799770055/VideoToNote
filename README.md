@@ -151,3 +151,8 @@ videoToNote/
 ├── requirements.txt      # Python 套件依賴列表
 └── README.md             # 專案說明文件
 ```
+
+## 📝 未來開發計畫 (TODO)
+
+- [ ] **整合 Google Gemini 模型**：新增一個選項，讓使用者可以選擇使用 Gemini Pro 來生成筆記。
+- [ ] **支援本地大型語言模型 (Local LLM)**：研究並整合開源的本地模型（例如 Llama、Ollama），讓使用者可以在沒有網路或不想使用雲端服務的情況下生成筆記。
