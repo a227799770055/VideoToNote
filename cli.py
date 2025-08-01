@@ -19,7 +19,7 @@ def main():
     parser.add_argument('--api-key', type=str, help='指定要使用的 API Key')
     
     # 模型選擇
-    parser.add_argument('--model', type=str, default='openai', choices=['openai', 'deepseek', 'ollama'],
+    parser.add_argument('--model', type=str, default='openai', choices=['openai', 'deepseek', 'gemini', 'ollama'],
                        help='選擇用於生成筆記的模型 (預設: openai)')
 
     # 其他選項
@@ -35,6 +35,9 @@ def main():
         sys.exit(1)
     if args.model == 'deepseek' and not args.api_key and not config.DEEPSEEK_API_KEY:
         print("錯誤：使用 DeepSeek 模型需要提供 API Key")
+        sys.exit(1)
+    if args.model == 'gemini' and not args.api_key and not config.GEMINI_API_KEY:
+        print("錯誤：使用 Gemini 模型需要提供 API Key")
         sys.exit(1)
 
     # 初始化處理器

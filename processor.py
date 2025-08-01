@@ -7,12 +7,12 @@ from tools import YouTubeDownloader, SpeechTranscriber, NotesGenerator
 from config import config
 
 class VideoProcessor:
-    def __init__(self, openai_api_key: str = None, deepseek_api_key: str = None):
+    def __init__(self, model_choice: str = 'openai', api_key: Optional[str] = None):
         self.downloader = YouTubeDownloader()
         self.transcriber = SpeechTranscriber()
         self.notes_generator = NotesGenerator(
-            openai_api_key=openai_api_key,
-            deepseek_api_key=deepseek_api_key
+            model_choice=model_choice,
+            api_key=api_key
         )
         
     def process_youtube_video(self, url: str, keep_audio: bool = False) -> bool:

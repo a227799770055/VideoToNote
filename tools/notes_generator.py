@@ -3,6 +3,7 @@
 """
 import os
 import requests
+import google.generativeai as genai
 from openai import OpenAI
 from typing import Optional, Dict, Any
 from config import config
@@ -23,6 +24,12 @@ class NotesGenerator:
                 raise ValueError("DeepSeek API Key not found.")
             self.client = OpenAI(api_key=self.api_key, base_url="https://api.deepseek.com")
             self.model_name = config.DEEPSEEK_MODEL
+        elif self.model_choice == 'gemini':
+            self.api_key = api_key or config.GEMINI_API_KEY
+            if not self.api_key:
+                raise ValueError("Gemini API Key not found.")
+            genai.configure(api_key=self.api_key)
+            self.model_name = config.GEMINI_MODEL
         elif self.model_choice == 'ollama':
             self.model_name = config.OLLAMA_MODEL
             self.api_url = config.OLLAMA_API_URL
@@ -47,7 +54,10 @@ class NotesGenerator:
                 text = str(transcription)
             
             prompt = prompt or config.DEFAULT_PROMPT
-            full_prompt = f"{prompt}\n\n逐字稿內容:\n{text}"
+            full_prompt = f"{prompt}
+
+逐字稿內容:
+{text}"
 
             print(f"正在使用 {self.model_choice} 模型生成筆記...")
 
@@ -60,6 +70,10 @@ class NotesGenerator:
                     ]
                 )
                 notes = response.choices[0].message.content
+            elif self.model_choice == 'gemini':
+                model = genai.GenerativeModel(self.model_name)
+                response = model.generate_content(full_prompt)
+                notes = response.text
             elif self.model_choice == 'ollama':
                 response = requests.post(
                     self.api_url,
