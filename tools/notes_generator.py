@@ -1,5 +1,6 @@
+# -*- coding: utf-8 -*-
 """
-筆記生成模組
+筆記生成模組 - 支援多種 AI 模型
 """
 import os
 import requests
@@ -7,6 +8,7 @@ import google.generativeai as genai
 from openai import OpenAI
 from typing import Optional, Dict, Any
 from config import config
+import subprocess
 
 class NotesGenerator:
     def __init__(self, model_choice: str = 'openai', api_key: Optional[str] = None):
@@ -54,10 +56,10 @@ class NotesGenerator:
                 text = str(transcription)
             
             prompt = prompt or config.DEFAULT_PROMPT
-            full_prompt = f"{prompt}
+            full_prompt = f"""{prompt}
 
 逐字稿內容:
-{text}"
+{text}"""
 
             print(f"正在使用 {self.model_choice} 模型生成筆記...")
 
@@ -90,27 +92,18 @@ class NotesGenerator:
                     notes = response.json().get('response', '')
                 except requests.exceptions.RequestException as e:
                     print(f"連接 Ollama API 時發生錯誤: {e}")
-                    print("請確保 Ollama 服務正在運行，並且 API URL ({self.api_url}) 是正確的。")
+                    print(f"請確保 Ollama 服務正在運行，並且 API URL ({self.api_url}) 是正確的。")
                     return None
                 except Exception as e:
                     print(f"生成筆記時發生錯誤: {e}")
                     return None
-                finally:
-                    # Unload Ollama model to free up memory
-                    print(f"嘗試卸載 Ollama 模型: {self.model_name}...")
-                    try:
-                        unload_command = ["ollama", "unload", self.model_name]
-                        subprocess.run(unload_command, check=True, capture_output=True, text=True, timeout=10)
-                        print(f"Ollama 模型 {self.model_name} 卸載完成。")
-                    except FileNotFoundError:
-                        print("錯誤: 'ollama' 命令未找到。請確保 Ollama 已安裝並在系統 PATH 中。")
-                    except subprocess.CalledProcessError as e:
-                        print(f"卸載 Ollama 模型 {self.model_name} 失敗: {e.stderr}")
-                    except subprocess.TimeoutExpired:
-                        print(f"卸載 Ollama 模型 {self.model_name} 超時。")
-                    except Exception as e:
-                        print(f"卸載 Ollama 模型時發生未預期的錯誤: {e}")
-
+            
+            return notes
+        
+        except Exception as e:
+            print(f"生成筆記時發生錯誤: {e}")
+            return None
+        
     def save_notes(self, notes: str, audio_path: str) -> str:
         """
         保存生成的筆記

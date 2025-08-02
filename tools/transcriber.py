@@ -1,5 +1,6 @@
+# -*- coding: utf-8 -*-
 """
-語音轉錄模組
+語音轉錄模組 - 使用 OpenAI Whisper
 """
 import torch
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline

@@ -7,18 +7,23 @@ from datetime import datetime
 
 app = Flask(__name__)
 
-def process_video_helper(url, request_id):
+
+def process_video_helper(url, request_id, model_choice=None):
     """處理影片的輔助函數"""
-    api_key = os.environ.get('DEEPSEEK_API_KEY')
-    if not api_key:
-        return {'error': '請設定 DEEPSEEK_API_KEY 環境變數'}
+    # Determine model choice: use parameter or environment variable
+    model_choice = model_choice or os.environ.get('MODEL_CHOICE', 'ollama')
+    api_key = os.environ.get('OPENAI_API_KEY') if model_choice == 'openai' else os.environ.get('DEEPSEEK_API_KEY') if model_choice == 'deepseek' else os.environ.get('GEMINI_API_KEY')
     
+    # 根據 model_choice 決定是否需要 API 金鑰
+    if model_choice in ['openai', 'deepseek', 'gemini'] and not api_key:
+        return {'error': f'請設定 {model_choice.upper()}_API_KEY 環境變數'}
     try:
         print(f"開始處理影片: {url}")
-        processor = VideoProcessor(deepseek_api_key=api_key)
-        
+        processor = VideoProcessor(model_choice=model_choice, api_key=api_key)
+
         # 先測試下載器
         print("測試 YouTube 下載...")
+        # 下載音檔
         audio_path = processor.downloader.download_audio(url)
         if not audio_path:
             return {'error': '影片下載失敗，請檢查：1) 影片是否為私人或地區限制 2) yt-dlp 是否為最新版本 3) 網路連線是否正常'}
@@ -92,15 +97,16 @@ def process():
         return jsonify({'error': '無效的 JSON 資料'}), 400
     
     url = data.get('url')
+    model_choice = data.get('model', 'ollama')
     if not url:
         return jsonify({'error': '請輸入 YouTube 連結'}), 400
-    
+
     # 簡單的 URL 驗證
     if 'youtube.com' not in url and 'youtu.be' not in url:
         return jsonify({'error': '請輸入有效的 YouTube 連結'}), 400
     
     request_id = str(uuid.uuid4())
-    result = process_video_helper(url, request_id)
+    result = process_video_helper(url, request_id, model_choice)
     
     if 'error' in result:
         return jsonify(result), 500
@@ -108,8 +114,8 @@ def process():
 
 if __name__ == '__main__':
     # 檢查必要的環境變數
-    if not os.environ.get('DEEPSEEK_API_KEY'):
-        print("警告：未設定 DEEPSEEK_API_KEY 環境變數")
-        print("請執行：export DEEPSEEK_API_KEY='your-api-key'")
-    
+    model_choice = os.environ.get('MODEL_CHOICE', 'ollama')
+    api_key_var = f'{model_choice.upper()}_API_KEY'
+    if model_choice in ['openai', 'deepseek', 'gemini'] and not os.environ.get(api_key_var):
+        print(f"警告：未設定 {api_key_var} 環境變數")
     app.run(debug=True, threaded=True)

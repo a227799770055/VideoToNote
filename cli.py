@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 命令列介面
 """
@@ -65,7 +66,7 @@ def main():
         print("\n使用者中斷操作")
         sys.exit(1)
     except Exception as e:
-        print(f"執行時發生錯誤: {e}")
+        print("An error occurred.")
         sys.exit(1)
 
 if __name__ == "__main__":
