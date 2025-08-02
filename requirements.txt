@@ -4,3 +4,5 @@ datasets
 openai
 yt-dlp
 flask
+requests
+google-generativeai

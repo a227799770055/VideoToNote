@@ -10,6 +10,7 @@ class Config:
     # API Keys (建議使用環境變數)
     OPENAI_API_KEY: Optional[str] = os.getenv('OPENAI_API_KEY')
     DEEPSEEK_API_KEY: Optional[str] = os.getenv('DEEPSEEK_API_KEY')
+    GEMINI_API_KEY: Optional[str] = os.getenv('GEMINI_API_KEY')
     
     # 目錄設定
     MP3_DIR: str = "mp3"
@@ -27,6 +28,9 @@ class Config:
     DEFAULT_PROMPT: str = "這是一場演講的逐字稿，請你幫我整理成6000字的筆記"
     OPENAI_MODEL: str = "gpt-4o-mini"
     DEEPSEEK_MODEL: str = "deepseek-chat"
+    GEMINI_MODEL: str = "gemini-1.5-flash"
+    OLLAMA_MODEL: str = "qwen3"
+    OLLAMA_API_URL: str = "http://localhost:11434/api/generate"
     
     def __post_init__(self):
         """確保必要的目錄存在"""

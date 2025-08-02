@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 命令列介面
 """
@@ -15,11 +16,13 @@ def main():
     group.add_argument('--audio', '-a', type=str, help='本地音檔路徑')
     group.add_argument('--batch', '-b', type=str, nargs='+', help='批次處理多個 YouTube 連結')
     
-    # API Key 選擇
-    api_group = parser.add_mutually_exclusive_group()
-    api_group.add_argument('--openai-key', type=str, help='OpenAI API Key')
-    api_group.add_argument('--deepseek-key', type=str, help='DeepSeek API Key')
+    # API Key 選擇 (非必要，Ollama不需要)
+    parser.add_argument('--api-key', type=str, help='指定要使用的 API Key')
     
+    # 模型選擇
+    parser.add_argument('--model', type=str, default='openai', choices=['openai', 'deepseek', 'gemini', 'ollama'],
+                       help='選擇用於生成筆記的模型 (預設: openai)')
+
     # 其他選項
     parser.add_argument('--keep-audio', action='store_true', help='保留下載的音檔')
     parser.add_argument('--language', type=str, default=config.DEFAULT_LANGUAGE, 
@@ -27,18 +30,21 @@ def main():
     
     args = parser.parse_args()
     
-    # 檢查 API Key
-    if not args.openai_key and not args.deepseek_key and not config.OPENAI_API_KEY and not config.DEEPSEEK_API_KEY:
-        print("錯誤：需要提供 OpenAI 或 DeepSeek 的 API Key")
-        print("可以透過：")
-        print("1. 命令列參數：--openai-key 或 --deepseek-key")
-        print("2. 環境變數：OPENAI_API_KEY 或 DEEPSEEK_API_KEY")
+    # 檢查 API Key (僅在需要時)
+    if args.model == 'openai' and not args.api_key and not config.OPENAI_API_KEY:
+        print("錯誤：使用 OpenAI 模型需要提供 API Key")
         sys.exit(1)
-    
+    if args.model == 'deepseek' and not args.api_key and not config.DEEPSEEK_API_KEY:
+        print("錯誤：使用 DeepSeek 模型需要提供 API Key")
+        sys.exit(1)
+    if args.model == 'gemini' and not args.api_key and not config.GEMINI_API_KEY:
+        print("錯誤：使用 Gemini 模型需要提供 API Key")
+        sys.exit(1)
+
     # 初始化處理器
     processor = VideoProcessor(
-        openai_api_key=args.openai_key,
-        deepseek_api_key=args.deepseek_key
+        model_choice=args.model,
+        api_key=args.api_key
     )
     
     # 執行對應的處理
@@ -60,7 +66,7 @@ def main():
         print("\n使用者中斷操作")
         sys.exit(1)
     except Exception as e:
-        print(f"執行時發生錯誤: {e}")
+        print("An error occurred.")
         sys.exit(1)
 
 if __name__ == "__main__":

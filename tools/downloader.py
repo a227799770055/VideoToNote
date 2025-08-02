@@ -1,8 +1,10 @@
+# -*- coding: utf-8 -*-
 """
 YouTube 下載器模組
 """
 import subprocess
 import os
+import time
 from typing import Optional
 from config import config
 
@@ -28,11 +30,16 @@ class YouTubeDownloader:
                 '--audio-format', 'mp3',
                 '-o', f'{self.output_dir}/%(title)s.%(ext)s',
                 '--no-warnings',
+                '--verbose', # Keep verbose for now
                 '--print', 'filename',
+                '--print', 'after_move:filepath',
+                '--output-na-placeholder', '', # Add this line
                 url
             ]
 
             print(f"正在下載: {url}")
+            print(f"執行命令: {' '.join(command)}")
+            
             result = subprocess.run(
                 command,
                 check=True,
@@ -41,20 +48,42 @@ class YouTubeDownloader:
                 encoding='utf-8',
                 errors='replace'
             )
-
+            
             if result.stderr:
                 print(f"警告: {result.stderr}")
-
-            audio_path_raw = result.stdout.strip()
-            # yt-dlp 在轉換前打印文件名，因此我們需要將擴展名更改為目標 mp3 格式
-            audio_path = os.path.splitext(audio_path_raw)[0] + '.mp3'
-
-            if audio_path and os.path.exists(audio_path):
-                print(f"下載完成: {audio_path}")
-                return audio_path
             
-            print(f"下載失敗: yt-dlp 未返回檔案路徑。 Full output: {result.stdout}")
-            return None
+            # yt-dlp prints the filename of the *original* downloaded file, not necessarily the final mp3
+            # We need to parse the title from the output or construct the expected path
+            # Extract title from stdout (yt-dlp prints filename on a new line)
+            output_lines = result.stdout.strip().split('\n')
+            print(f"yt-dlp 輸出: {result.stdout}")
+            
+            if output_lines:
+                # The last line usually contains the filename
+                downloaded_filename = output_lines[-1]
+                # Remove extension and directory to get just the title
+                title = os.path.splitext(os.path.basename(downloaded_filename))[0]
+                expected_audio_path = os.path.join(self.output_dir, f"{title}.mp3")
+                
+                # Wait for the file to exist, with a timeout
+                timeout = 60  # seconds - increased timeout for ffmpeg conversion
+                start_time = time.time()
+                while not os.path.exists(expected_audio_path) and (time.time() - start_time) < timeout:
+                    time.sleep(2)  # Check every 2 seconds
+                
+                if os.path.exists(expected_audio_path):
+                    print(f"下載完成: {expected_audio_path}")
+                    return expected_audio_path
+                else:
+                    print(f"下載失敗: 預期的 MP3 檔案未生成或未找到: {expected_audio_path}")
+                    # List files in mp3 directory to see what was actually downloaded
+                    print(f"mp3 目錄內容:")
+                    for file in os.listdir(self.output_dir):
+                        print(f"  - {file}")
+                    return None
+            else:
+                print(f"下載失敗: yt-dlp 未返回任何輸出。 Full output: {result.stdout}")
+                return None
             
         except subprocess.CalledProcessError as e:
             self._handle_download_error(e)

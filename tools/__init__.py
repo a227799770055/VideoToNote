@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Tools package - 包含所有工具模組
 """

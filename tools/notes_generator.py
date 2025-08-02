@@ -1,29 +1,42 @@
+# -*- coding: utf-8 -*-
 """
-筆記生成模組
+筆記生成模組 - 支援多種 AI 模型
 """
 import os
+import requests
+import google.generativeai as genai
 from openai import OpenAI
 from typing import Optional, Dict, Any
 from config import config
+import subprocess
 
 class NotesGenerator:
-    def __init__(self, openai_api_key: str = None, deepseek_api_key: str = None):
-        self.openai_api_key = openai_api_key or config.OPENAI_API_KEY
-        self.deepseek_api_key = deepseek_api_key or config.DEEPSEEK_API_KEY
-        
-        if self.openai_api_key:
-            self.client = OpenAI(api_key=self.openai_api_key)
-            self.model_flag = "openai"
+    def __init__(self, model_choice: str = 'openai', api_key: Optional[str] = None):
+        self.model_choice = model_choice
+
+        if self.model_choice == 'openai':
+            self.api_key = api_key or config.OPENAI_API_KEY
+            if not self.api_key:
+                raise ValueError("OpenAI API Key not found.")
+            self.client = OpenAI(api_key=self.api_key)
             self.model_name = config.OPENAI_MODEL
-        elif self.deepseek_api_key:
-            self.client = OpenAI(
-                api_key=self.deepseek_api_key, 
-                base_url="https://api.deepseek.com"
-            )
-            self.model_flag = "deepseek"
+        elif self.model_choice == 'deepseek':
+            self.api_key = api_key or config.DEEPSEEK_API_KEY
+            if not self.api_key:
+                raise ValueError("DeepSeek API Key not found.")
+            self.client = OpenAI(api_key=self.api_key, base_url="https://api.deepseek.com")
             self.model_name = config.DEEPSEEK_MODEL
+        elif self.model_choice == 'gemini':
+            self.api_key = api_key or config.GEMINI_API_KEY
+            if not self.api_key:
+                raise ValueError("Gemini API Key not found.")
+            genai.configure(api_key=self.api_key)
+            self.model_name = config.GEMINI_MODEL
+        elif self.model_choice == 'ollama':
+            self.model_name = config.OLLAMA_MODEL
+            self.api_url = config.OLLAMA_API_URL
         else:
-            raise ValueError("需要提供 OpenAI 或 DeepSeek 的 API Key")
+            raise ValueError(f"Unsupported model choice: {self.model_choice}")
 
     def generate_notes(self, transcription: Dict[str, Any], prompt: str = None) -> Optional[str]:
         """
@@ -37,31 +50,60 @@ class NotesGenerator:
             生成的筆記內容
         """
         try:
-            # 提取文字內容
             if isinstance(transcription, dict) and 'text' in transcription:
                 text = transcription['text']
             else:
                 text = str(transcription)
             
             prompt = prompt or config.DEFAULT_PROMPT
+            full_prompt = f"""{prompt}
+
+逐字稿內容:
+{text}"""
+
+            print(f"正在使用 {self.model_choice} 模型生成筆記...")
+
+            if self.model_choice in ['openai', 'deepseek']:
+                response = self.client.chat.completions.create(
+                    model=self.model_name,
+                    messages=[
+                        {"role": "system", "content": "你是一個專業的筆記整理專家"},
+                        {"role": "user", "content": full_prompt}
+                    ]
+                )
+                notes = response.choices[0].message.content
+            elif self.model_choice == 'gemini':
+                model = genai.GenerativeModel(self.model_name)
+                response = model.generate_content(full_prompt)
+                notes = response.text
+            elif self.model_choice == 'ollama':
+                notes = "" # Initialize notes
+                try:
+                    # Make the API call. Ollama will load the model if it's not already loaded.
+                    response = requests.post(
+                        self.api_url,
+                        json={
+                            "model": self.model_name,
+                            "prompt": full_prompt,
+                            "stream": False
+                        }
+                    )
+                    response.raise_for_status() # 如果請求失敗則拋出異常
+                    notes = response.json().get('response', '')
+                except requests.exceptions.RequestException as e:
+                    print(f"連接 Ollama API 時發生錯誤: {e}")
+                    print(f"請確保 Ollama 服務正在運行，並且 API URL ({self.api_url}) 是正確的。")
+                    return None
+                except Exception as e:
+                    print(f"生成筆記時發生錯誤: {e}")
+                    return None
             
-            print("正在生成筆記...")
-            response = self.client.chat.completions.create(
-                model=self.model_name,
-                messages=[
-                    {"role": "system", "content": "你是一個專業的筆記整理專家"},
-                    {"role": "user", "content": f"{prompt}\n\n逐字稿內容:\n{text}"}
-                ]
-            )
-            
-            notes = response.choices[0].message.content
-            print("筆記生成完成")
             return notes
-            
+        
         except Exception as e:
             print(f"生成筆記時發生錯誤: {e}")
             return None
-
+        
     def save_notes(self, notes: str, audio_path: str) -> str:
         """
         保存生成的筆記
