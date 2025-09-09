@@ -1,0 +1,6 @@
+-r base.txt
+flask
+pytest
+pytest-cov
+black
+flake8

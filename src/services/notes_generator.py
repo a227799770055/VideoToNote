@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-筆記生成模組 - 支援多種 AI 模型
+筆記生成服務 - 支援多種 AI 模型
 """
-import os
 import requests
 import google.generativeai as genai
 from openai import OpenAI
 from typing import Optional, Dict, Any
-from config import config
-import subprocess
+from ..core.config import config
+from ..utils.file_manager import FileManager
 
 class NotesGenerator:
     def __init__(self, model_choice: str = 'openai', api_key: Optional[str] = None):
@@ -77,9 +76,8 @@ class NotesGenerator:
                 response = model.generate_content(full_prompt)
                 notes = response.text
             elif self.model_choice == 'ollama':
-                notes = "" # Initialize notes
+                notes = ""
                 try:
-                    # Make the API call. Ollama will load the model if it's not already loaded.
                     response = requests.post(
                         self.api_url,
                         json={
@@ -88,7 +86,7 @@ class NotesGenerator:
                             "stream": False
                         }
                     )
-                    response.raise_for_status() # 如果請求失敗則拋出異常
+                    response.raise_for_status()
                     notes = response.json().get('response', '')
                 except requests.exceptions.RequestException as e:
                     print(f"連接 Ollama API 時發生錯誤: {e}")
@@ -115,11 +113,13 @@ class NotesGenerator:
         Returns:
             保存的檔案路徑
         """
-        base_name = os.path.splitext(os.path.basename(audio_path))[0]
-        output_path = f"{config.NOTES_DIR}/{base_name}_notes.txt"
+        output_path = FileManager.generate_output_path(
+            audio_path, 
+            config.NOTES_DIR, 
+            "_notes"
+        )
         
-        with open(output_path, 'w', encoding='utf-8') as f:
-            f.write(notes if notes else "")
-            
-        print(f"筆記已保存到: {output_path}")
-        return output_path
+        if FileManager.save_text_file(notes or "", output_path):
+            return str(output_path)
+        
+        return None

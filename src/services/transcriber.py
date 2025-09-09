@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-語音轉錄模組 - 使用 OpenAI Whisper
+語音轉錄服務 - 使用 OpenAI Whisper
 """
 import torch
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
-import os
+from pathlib import Path
 from typing import Dict, Any, Optional
-from config import config
+from ..core.config import config
+from ..utils.file_manager import FileManager
 
 class SpeechTranscriber:
     def __init__(self, model_id: str = None, device: str = None):
@@ -80,14 +81,15 @@ class SpeechTranscriber:
         Returns:
             保存的檔案路徑
         """
-        base_name = os.path.splitext(os.path.basename(audio_path))[0]
-        output_path = f"{config.TRANSCRIPTION_DIR}/{base_name}_transcription.txt"
+        output_path = FileManager.generate_output_path(
+            audio_path, 
+            config.TRANSCRIPTION_DIR, 
+            "_transcription"
+        )
         
-        with open(output_path, 'w', encoding='utf-8') as f:
-            if isinstance(result, dict) and 'text' in result:
-                f.write(result['text'])
-            else:
-                f.write(str(result))
-                
-        print(f"轉錄結果已保存到: {output_path}")
-        return output_path
+        content = result.get('text', str(result)) if isinstance(result, dict) else str(result)
+        
+        if FileManager.save_text_file(content, output_path):
+            return str(output_path)
+        
+        return None

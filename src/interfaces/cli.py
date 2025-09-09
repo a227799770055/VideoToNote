@@ -4,8 +4,8 @@
 """
 import argparse
 import sys
-from processor import VideoProcessor
-from config import config
+from ..core.processor import VideoProcessor
+from ..core.config import config
 
 def main():
     parser = argparse.ArgumentParser(description='影片/音檔轉錄與筆記生成工具')
@@ -30,25 +30,14 @@ def main():
     
     args = parser.parse_args()
     
-    # 檢查 API Key (僅在需要時)
-    if args.model == 'openai' and not args.api_key and not config.OPENAI_API_KEY:
-        print("錯誤：使用 OpenAI 模型需要提供 API Key")
-        sys.exit(1)
-    if args.model == 'deepseek' and not args.api_key and not config.DEEPSEEK_API_KEY:
-        print("錯誤：使用 DeepSeek 模型需要提供 API Key")
-        sys.exit(1)
-    if args.model == 'gemini' and not args.api_key and not config.GEMINI_API_KEY:
-        print("錯誤：使用 Gemini 模型需要提供 API Key")
-        sys.exit(1)
-
-    # 初始化處理器
-    processor = VideoProcessor(
-        model_choice=args.model,
-        api_key=args.api_key
-    )
-    
-    # 執行對應的處理
     try:
+        # 建立處理器
+        processor = VideoProcessor(
+            model_choice=args.model,
+            api_key=args.api_key
+        )
+        
+        # 根據輸入類型處理
         if args.youtube:
             success = processor.process_youtube_video(args.youtube, args.keep_audio)
             sys.exit(0 if success else 1)
@@ -59,14 +48,15 @@ def main():
             
         elif args.batch:
             results = processor.process_multiple_videos(args.batch, args.keep_audio)
-            # 如果所有都成功則返回 0，否則返回 1
-            sys.exit(0 if all(results) else 1)
+            # 如果有任何失敗，返回錯誤碼
+            success = all(results)
+            sys.exit(0 if success else 1)
             
     except KeyboardInterrupt:
-        print("\n使用者中斷操作")
+        print("\n用戶中斷操作")
         sys.exit(1)
     except Exception as e:
-        print("An error occurred.")
+        print(f"程式執行錯誤: {e}")
         sys.exit(1)
 
 if __name__ == "__main__":

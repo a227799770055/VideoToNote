@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-主要處理流程 - 統合所有功能
+核心處理器 - 統合所有功能
 """
 import os
 from typing import List, Optional
-from tools import YouTubeDownloader, SpeechTranscriber, NotesGenerator
-from config import config
+from ..services.downloader import YouTubeDownloader
+from ..services.transcriber import SpeechTranscriber  
+from ..services.notes_generator import NotesGenerator
+from ..utils.file_manager import FileManager
 
 class VideoProcessor:
     def __init__(self, model_choice: str = 'openai', api_key: Optional[str] = None):
@@ -129,12 +131,8 @@ class VideoProcessor:
     
     def _cleanup_audio_file(self, audio_path: str):
         """清理臨時音檔"""
-        try:
-            if os.path.exists(audio_path):
-                os.remove(audio_path)
-                print(f"已刪除臨時文件: {audio_path}")
-        except Exception as e:
-            print(f"刪除臨時文件時出錯: {e}")
+        if FileManager.cleanup_file(audio_path):
+            print(f"已刪除臨時文件: {audio_path}")
 
 # 為了向後相容，保留原來的 SpeechRecognizer 類別
 class SpeechRecognizer(VideoProcessor):
