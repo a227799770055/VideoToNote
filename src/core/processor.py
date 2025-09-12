@@ -5,14 +5,34 @@
 import os
 from typing import List, Optional
 from ..services.downloader import YouTubeDownloader
-from ..services.transcriber import SpeechTranscriber  
+from ..services.transcriber import SpeechTranscriber, FastSpeechTranscriber
 from ..services.notes_generator import NotesGenerator
 from ..utils.file_manager import FileManager
 
 class VideoProcessor:
-    def __init__(self, model_choice: str = 'openai', api_key: Optional[str] = None):
+    def __init__(self, model_choice: str = 'openai', api_key: Optional[str] = None, transcriber_type: str = 'fast'):
+        """
+        初始化影片處理器
+        
+        Args:
+            model_choice: 筆記生成模型選擇
+            api_key: API 金鑰
+            transcriber_type: 轉錄器類型 ('standard' 或 'fast'，預設: 'fast')
+        """
         self.downloader = YouTubeDownloader()
-        self.transcriber = SpeechTranscriber()
+        
+        # 根據選擇初始化不同的轉錄器
+        if transcriber_type.lower() == 'standard':
+            self.transcriber = SpeechTranscriber()
+            print("使用標準轉錄器 (transformers)")
+        else:  # 預設使用快速轉錄器
+            try:
+                self.transcriber = FastSpeechTranscriber()
+                print("使用快速轉錄器 (pywhispercpp)")
+            except ImportError:
+                print("快速轉錄器不可用，回退到標準轉錄器")
+                self.transcriber = SpeechTranscriber()
+            
         self.notes_generator = NotesGenerator(
             model_choice=model_choice,
             api_key=api_key
@@ -133,6 +153,24 @@ class VideoProcessor:
         """清理臨時音檔"""
         if FileManager.cleanup_file(audio_path):
             print(f"已刪除臨時文件: {audio_path}")
+
+
+class FastVideoProcessor(VideoProcessor):
+    """
+    使用快速轉錄器的影片處理器
+    預設使用 FastSpeechTranscriber 以獲得更好的性能
+    """
+    
+    def __init__(self, model_choice: str = 'openai', api_key: Optional[str] = None):
+        """
+        初始化快速影片處理器
+        
+        Args:
+            model_choice: 筆記生成模型選擇
+            api_key: API 金鑰
+        """
+        super().__init__(model_choice=model_choice, api_key=api_key, transcriber_type='fast')
+
 
 # 為了向後相容，保留原來的 SpeechRecognizer 類別
 class SpeechRecognizer(VideoProcessor):

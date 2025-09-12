@@ -4,7 +4,7 @@
 """
 import argparse
 import sys
-from ..core.processor import VideoProcessor
+from ..core.processor import VideoProcessor, FastVideoProcessor
 from ..core.config import config
 
 def main():
@@ -22,6 +22,10 @@ def main():
     # 模型選擇
     parser.add_argument('--model', type=str, default='openai', choices=['openai', 'deepseek', 'gemini', 'ollama'],
                        help='選擇用於生成筆記的模型 (預設: openai)')
+    
+    # 轉錄器選擇
+    parser.add_argument('--transcriber', type=str, default='fast', choices=['standard', 'fast'],
+                       help='選擇轉錄器類型 (standard: transformers, fast: pywhispercpp, 預設: fast)')
 
     # 其他選項
     parser.add_argument('--keep-audio', action='store_true', help='保留下載的音檔')
@@ -31,11 +35,18 @@ def main():
     args = parser.parse_args()
     
     try:
-        # 建立處理器
-        processor = VideoProcessor(
-            model_choice=args.model,
-            api_key=args.api_key
-        )
+        # 建立處理器 - 根據選擇使用不同的轉錄器
+        if args.transcriber == 'fast':
+            processor = FastVideoProcessor(
+                model_choice=args.model,
+                api_key=args.api_key
+            )
+        else:
+            processor = VideoProcessor(
+                model_choice=args.model,
+                api_key=args.api_key,
+                transcriber_type='standard'
+            )
         
         # 根據輸入類型處理
         if args.youtube:

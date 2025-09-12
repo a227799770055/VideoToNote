@@ -6,6 +6,15 @@ from pathlib import Path
 from dataclasses import dataclass
 from typing import Optional
 
+try:
+    from dotenv import load_dotenv
+    # 載入 .env 文件
+    PROJECT_ROOT = Path(__file__).parent.parent.parent
+    load_dotenv(PROJECT_ROOT / '.env')
+except ImportError:
+    # 如果沒有安裝 python-dotenv，繼續使用系統環境變數
+    pass
+
 # 專案根目錄
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 
@@ -23,7 +32,7 @@ class Config:
     NOTES_DIR: Path = DATA_DIR / "notes"
     
     # 模型設定
-    WHISPER_MODEL_ID: str = "openai/whisper-large-v3"
+    WHISPER_MODEL_ID: str = "openai/whisper-small"  # 改用較小的模型測試
     DEFAULT_LANGUAGE: str = "chinese"
     
     # API 設定

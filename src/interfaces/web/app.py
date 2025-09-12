@@ -5,7 +5,7 @@ Flask Web 應用
 from flask import Flask, render_template, request, jsonify
 import os
 from pathlib import Path
-from ...core.processor import VideoProcessor
+from ...core.processor import VideoProcessor, FastVideoProcessor
 from ...core.config import config
 
 # Flask 應用初始化
@@ -27,13 +27,18 @@ def process_video():
         data = request.get_json()
         url = data.get('url')
         model = data.get('model', 'openai')
+        transcriber = data.get('transcriber', 'fast')  # 預設使用快速轉錄器
         keep_audio = data.get('keep_audio', False)
         
         if not url:
             return jsonify({'success': False, 'error': '請提供 YouTube 連結'})
         
-        # 建立處理器
-        processor = VideoProcessor(model_choice=model)
+        # 建立處理器 - 根據選擇使用不同的轉錄器
+        if transcriber == 'fast':
+            print("使用快速轉錄器 (pywhispercpp)!!!!!")
+            processor = FastVideoProcessor(model_choice=model)
+        else:
+            processor = VideoProcessor(model_choice=model, transcriber_type='standard')
         
         # 處理影片
         success = processor.process_youtube_video(url, keep_audio)
@@ -64,8 +69,8 @@ def process_audio():
         audio_path = config.MP3_DIR / filename
         file.save(str(audio_path))
         
-        # 建立處理器
-        processor = VideoProcessor(model_choice=model)
+        # 建立處理器 - 預設使用快速轉錄器
+        processor = VideoProcessor(model_choice=model)  # 現在預設就是 fast
         
         # 處理音檔
         success = processor.process_audio_file(str(audio_path))

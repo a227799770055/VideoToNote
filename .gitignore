@@ -2,6 +2,7 @@
 data/mp3/
 data/transcriptions/
 data/notes/
+certified/
 # 保留舊目錄以向後相容
 mp3/
 逐字稿/

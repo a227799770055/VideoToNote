@@ -26,8 +26,15 @@
 
 ### 🧠 AI 驅動的智能轉換
 - **高精度語音轉錄**: 基於 OpenAI Whisper 大模型
+- **🚀 雙轉錄引擎**: 支援標準和快速轉錄模式
+  - **標準模式** (transformers): 高精度，支援複雜語音環境
+  - **快速模式** (pywhispercpp): C++ 實現，支援 GPU 加速，速度提升 3-5 倍
 - **多語言支援**: 中文、英文等多種語言識別
 - **時間戳記**: 精確的時間軸對應
+- **硬體加速**: 
+  - CUDA GPU 加速 (標準模式)
+  - Apple Metal GPU 加速 (快速模式)
+  - CoreML 優化支援 (快速模式)
 
 ### 📝 智能筆記生成
 支援多種 AI 模型，滿足不同需求：
@@ -103,7 +110,10 @@ conda activate video2note
 # 3. 安裝依賴
 pip install -r requirements/base.txt
 
-# 4. 安裝系統依賴
+# 4. 安裝快速轉錄引擎 (可選，建議安裝)
+pip install pywhispercpp
+
+# 5. 安裝系統依賴
 # macOS
 brew install yt-dlp
 # Ubuntu/Debian
@@ -131,11 +141,15 @@ cp .env.example .env
 #### 基本使用
 
 ```bash
-# 處理 YouTube 影片
+# 處理 YouTube 影片 (預設使用快速轉錄器)
 python main.py --youtube "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 
 # 處理本地音檔
 python main.py --audio "path/to/your/audio.mp3"
+
+# 選擇轉錄器模式
+python main.py --audio "audio.mp3" --transcriber fast    # 快速模式 (預設)
+python main.py --audio "audio.mp3" --transcriber standard # 標準模式
 
 # 指定 AI 模型
 python main.py --youtube "https://youtu.be/xyz" --model deepseek
@@ -161,10 +175,23 @@ python main.py --batch \
 python main.py \
   --youtube "https://youtu.be/xyz" \
   --model gemini \
+  --transcriber fast \
   --api-key "your-custom-key" \
   --keep-audio \
   --language chinese
 ```
+
+#### 🚀 轉錄器對比
+
+| 特性 | 標準模式 (transformers) | 快速模式 (pywhispercpp) |
+|------|------------------------|------------------------|
+| **速度** | 中等 | 🚀 快 3-5 倍 |
+| **精度** | 🎯 最高 | 高 |
+| **記憶體使用** | 較高 | 🔋 較低 |
+| **GPU 支援** | CUDA | Metal (macOS), CUDA |
+| **CoreML** | ❌ | ✅ Apple 優化 |
+| **背景執行** | ❌ | ✅ 適合長時間處理 |
+| **適用場景** | 高精度要求 | 批次處理、即時應用 |
 
 ### 🌐 Web 介面
 
@@ -210,7 +237,7 @@ python scripts/generate_note.py "transcription.txt" openai
 
 ```python
 # 預設模型設定
-WHISPER_MODEL_ID = "openai/whisper-large-v3"
+WHISPER_MODEL_ID = "openai/whisper-small"  # 快速模式預設模型
 OPENAI_MODEL = "gpt-4o-mini"
 DEEPSEEK_MODEL = "deepseek-chat"
 GEMINI_MODEL = "gemini-1.5-flash"
@@ -218,6 +245,23 @@ GEMINI_MODEL = "gemini-1.5-flash"
 # 自訂提示詞
 DEFAULT_PROMPT = "這是一場演講的逐字稿，請你幫我整理成6000字的筆記"
 ```
+
+### 🚀 快速轉錄器設定
+
+pywhispercpp 支援多種模型大小：
+
+| 模型 | 大小 | 速度 | 精度 | 建議使用場景 |
+|------|------|------|------|-------------|
+| `tiny` | ~39MB | 🚀🚀🚀 | ⭐⭐ | 即時轉錄、測試 |
+| `base` | ~74MB | 🚀🚀 | ⭐⭐⭐ | 一般使用 |
+| `small` | ~244MB | 🚀 | ⭐⭐⭐⭐ | **推薦平衡點** |
+| `medium` | ~769MB | 🔄 | ⭐⭐⭐⭐⭐ | 高精度需求 |
+| `large-v3` | ~1550MB | 🐌 | ⭐⭐⭐⭐⭐ | 最高精度 |
+
+**GPU 加速支援**：
+- **Apple Silicon**: 自動使用 Metal GPU 加速
+- **NVIDIA GPU**: 支援 CUDA 加速
+- **Intel GPU**: 支援 OpenCL 加速
 
 ---
 
@@ -334,6 +378,15 @@ gunicorn -w 4 -b 0.0.0.0:5001 "src.interfaces.web.app:app"
 
 ## 📜 版本記錄
 
+### v1.1.0 (2025-09-11) 🚀 **最新版本**
+- 🚀 **新增快速轉錄引擎**: 整合 pywhispercpp，轉錄速度提升 3-5 倍
+- ⚡ **GPU 硬體加速**: 支援 Apple Metal、NVIDIA CUDA、Intel OpenCL
+- 🔄 **雙轉錄模式**: 可選擇標準模式 (高精度) 或快速模式 (高效能)
+- 🍎 **Apple 優化**: 支援 CoreML，在 Apple Silicon 上效能最佳化
+- 🎯 **智能回退**: 快速模式不可用時自動回退到標準模式
+- 📊 **即時進度顯示**: 轉錄過程中顯示即時進度條
+- 🔧 **預設最佳化**: 快速轉錄器設為預設，平衡速度與精度
+
 ### v1.0.0 (2025-09-09)
 - 🎉 完整重構專案架構
 - ✨ 新增模組化設計
@@ -352,6 +405,7 @@ gunicorn -w 4 -b 0.0.0.0:5001 "src.interfaces.web.app:app"
 特別感謝以下開源專案：
 
 - **[OpenAI Whisper](https://github.com/openai/whisper)** - 高品質語音識別
+- **[pywhispercpp](https://github.com/abdeladim-s/pywhispercpp)** - 高效能 C++ Whisper 實現
 - **[yt-dlp](https://github.com/yt-dlp/yt-dlp)** - YouTube 影片下載
 - **[Transformers](https://huggingface.co/transformers/)** - 機器學習框架
 - **[Flask](https://flask.palletsprojects.com/)** - Web 應用框架
