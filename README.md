@@ -77,11 +77,11 @@ pip install pywhispercpp
 
 ### 配置 API 金鑰
 
-請從範本複製環境變數檔案，並填入對應的 API 金鑰：
+請從設定檔範本複製一份，並填入您要使用的 AI 模型 API 金鑰：
 
 ```bash
-cp .env.example .env
-# 編輯 .env 填寫對應的 OPENAI_API_KEY, DEEPSEEK_API_KEY, GEMINI_API_KEY 等
+cp config/model.yaml.example config/model.yaml
+# 編輯 config/model.yaml，在 api_keys 區塊填寫對應的金鑰 (如 openai, deepseek, gemini)
 ```
 
 ---
@@ -109,7 +109,7 @@ python main.py --batch "影片網址1" "影片網址2"
 - **選擇轉錄器 (`--transcriber`)**: 支援 `fast` (預設) 與 `standard`。
 - **保留音檔 (`--keep-audio`)**: 轉錄完成後不刪除暫存音檔。
 - **指定語言 (`--language`)**: 轉錄的目標語言 (預設為 `chinese`)。
-- **直接傳遞 API 金鑰 (`--api-key`)**: 從終端機直接提供金鑰而不使用 `.env`。
+- **直接傳遞 API 金鑰 (`--api-key`)**: 從終端機直接提供金鑰而不使用 `model.yaml`。
 
 **完整參數組合範例**：
 ```bash
