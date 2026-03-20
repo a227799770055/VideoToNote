@@ -4,8 +4,8 @@
 """
 import argparse
 import sys
-from ..core.processor import VideoProcessor, FastVideoProcessor
-from ..core.config import config
+from src.core.processor import VideoProcessor, FastVideoProcessor
+from src.core.config import config
 
 def main():
     parser = argparse.ArgumentParser(description='影片/音檔轉錄與筆記生成工具')

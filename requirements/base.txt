@@ -1,7 +1,0 @@
-torch
-transformers
-datasets
-openai
-yt-dlp
-requests
-google-generativeai

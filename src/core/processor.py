@@ -5,8 +5,8 @@
 import os
 from typing import List, Optional
 from ..services.downloader import YouTubeDownloader
-from ..services.transcriber import SpeechTranscriber, FastSpeechTranscriber
-from ..services.notes_generator import NotesGenerator
+from ..services.transcriber import TranscriberFactory
+from ..services.notes_generator import NotesGeneratorFactory
 from ..utils.file_manager import FileManager
 
 class VideoProcessor:
@@ -21,19 +21,11 @@ class VideoProcessor:
         """
         self.downloader = YouTubeDownloader()
         
-        # 根據選擇初始化不同的轉錄器
-        if transcriber_type.lower() == 'standard':
-            self.transcriber = SpeechTranscriber()
-            print("使用標準轉錄器 (transformers)")
-        else:  # 預設使用快速轉錄器
-            try:
-                self.transcriber = FastSpeechTranscriber()
-                print("使用快速轉錄器 (pywhispercpp)")
-            except ImportError:
-                print("快速轉錄器不可用，回退到標準轉錄器")
-                self.transcriber = SpeechTranscriber()
+        # 使用 TranscriberFactory 建立轉錄器
+        self.transcriber = TranscriberFactory.create(transcriber_type=transcriber_type)
             
-        self.notes_generator = NotesGenerator(
+        # 使用 NotesGeneratorFactory 建立筆記生成器
+        self.notes_generator = NotesGeneratorFactory.create(
             model_choice=model_choice,
             api_key=api_key
         )
@@ -155,24 +147,11 @@ class VideoProcessor:
             print(f"已刪除臨時文件: {audio_path}")
 
 
+# 為了向後相容，保留 FastVideoProcessor 的別名
 class FastVideoProcessor(VideoProcessor):
-    """
-    使用快速轉錄器的影片處理器
-    預設使用 FastSpeechTranscriber 以獲得更好的性能
-    """
-    
     def __init__(self, model_choice: str = 'openai', api_key: Optional[str] = None):
-        """
-        初始化快速影片處理器
-        
-        Args:
-            model_choice: 筆記生成模型選擇
-            api_key: API 金鑰
-        """
         super().__init__(model_choice=model_choice, api_key=api_key, transcriber_type='fast')
 
-
-# 為了向後相容，保留原來的 SpeechRecognizer 類別
 class SpeechRecognizer(VideoProcessor):
     """向後相容的類別名稱"""
     pass

@@ -6,6 +6,7 @@ import torch
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 from pathlib import Path
 from typing import Dict, Any, Optional
+from abc import ABC, abstractmethod
 from ..core.config import config
 from ..utils.file_manager import FileManager
 
@@ -15,7 +16,17 @@ try:
 except ImportError:
     PYWHISPERCPP_AVAILABLE = False
 
-class SpeechTranscriber:
+class BaseTranscriber(ABC):
+    @abstractmethod
+    def transcribe(self, audio_path: str, language: str = None, return_timestamps: bool = True) -> Optional[Dict[str, Any]]:
+        pass
+        
+    @abstractmethod
+    def save_transcription(self, result: Dict[str, Any], audio_path: str) -> str:
+        pass
+
+
+class SpeechTranscriber(BaseTranscriber):
     def __init__(self, model_id: str = None, device: str = None):
         self.model_id = model_id or config.WHISPER_MODEL_ID
         self.device = device if device else ("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -101,7 +112,7 @@ class SpeechTranscriber:
         return None
 
 
-class FastSpeechTranscriber:
+class FastSpeechTranscriber(BaseTranscriber):
     """
     使用 pywhispercpp 的快速語音轉錄服務
     功能完全對照 SpeechTranscriber，但使用 C++ 實現以獲得更好的性能
@@ -252,3 +263,18 @@ class FastSpeechTranscriber:
             return str(output_path)
         
         return None
+
+
+class TranscriberFactory:
+    @staticmethod
+    def create(transcriber_type: str = 'fast', **kwargs) -> BaseTranscriber:
+        if transcriber_type.lower() == 'fast':
+            if PYWHISPERCPP_AVAILABLE:
+                return FastSpeechTranscriber(**kwargs)
+            else:
+                print("快速轉錄器不可用，回退到標準轉錄器")
+                return SpeechTranscriber(**kwargs)
+        elif transcriber_type.lower() == 'standard':
+            return SpeechTranscriber(**kwargs)
+        else:
+            raise ValueError(f"不支援的轉錄器類型: {transcriber_type}")

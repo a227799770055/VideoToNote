@@ -1,0 +1,11 @@
+api_keys:
+  openai: "sk-your-openai-api-key-here"
+  deepseek: "sk-your-deepseek-api-key-here"
+  gemini: "your-gemini-api-key-here"
+
+models:
+  openai_model: "gpt-4o-mini"
+  deepseek_model: "deepseek-chat"
+  gemini_model: "gemini-1.5-flash"
+  ollama_model: "qwen3"
+  ollama_api_url: "http://localhost:11434/api/generate"
