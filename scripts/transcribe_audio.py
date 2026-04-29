@@ -6,9 +6,9 @@
 import sys
 from pathlib import Path
 
-# 將 src 目錄加入 Python 路徑
-src_path = Path(__file__).parent.parent / "src"
-sys.path.insert(0, str(src_path))
+# 將專案根目錄加入 Python 路徑
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
 
 from src.services.transcriber import SpeechTranscriber
 from src.core.config import config

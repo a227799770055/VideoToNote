@@ -35,8 +35,11 @@ class Config:
     OLLAMA_MODEL: str = "qwen3"
     OLLAMA_API_URL: str = "http://localhost:11434/api/generate"
     
+    # 下載設定
+    DOWNLOAD_RATE_LIMIT: str = "5M"
+    
     # 筆記生成設定
-    DEFAULT_PROMPT: str = "這是一場演講的逐字稿，請你幫我整理成6000字的筆記"
+    DEFAULT_PROMPT: str = "這是一場演講的逐字稿，請你幫我整理成500字的筆記"
     
     def __post_init__(self):
         """初始化後：載入 YAML 與建立必要目錄"""
@@ -66,6 +69,8 @@ class Config:
             if 'gemini_model' in models: self.GEMINI_MODEL = models['gemini_model']
             if 'ollama_model' in models: self.OLLAMA_MODEL = models['ollama_model']
             if 'ollama_api_url' in models: self.OLLAMA_API_URL = models['ollama_api_url']
+            if 'download_rate_limit' in models: self.DOWNLOAD_RATE_LIMIT = str(models['download_rate_limit'])
+            if 'whisper_model' in models: self.WHISPER_MODEL_ID = models['whisper_model']
             
         except Exception as e:
             print(f"讀取 YAML 設定檔時發生錯誤: {e}")

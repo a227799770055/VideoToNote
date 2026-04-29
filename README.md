@@ -70,9 +70,9 @@ pip install .
 # (可選) 安裝快速轉錄引擎 - 強烈建議安裝以獲得 3-5 倍的速度提升
 pip install pywhispercpp
 
-# 系統依賴: 下載 YouTube 影片的必備工具
-# macOS: brew install yt-dlp
-# Ubuntu: sudo apt install yt-dlp
+# 系統依賴: 下載 YouTube 影片與音檔處理的必備工具 (yt-dlp, ffmpeg)
+# macOS: brew install yt-dlp ffmpeg
+# Ubuntu: sudo apt install  yt-dlp ffmpeg
 ```
 
 ### 配置 API 金鑰
@@ -124,4 +124,39 @@ python main.py \
 您隨時可以使用以下指令來查看所有可用參數：
 ```bash
 python main.py --help
+```
+
+---
+
+## 🎵 批次影片轉音檔 (convert2audio.py)
+
+若您有大量本地影片需要先轉換為音訊，可使用 `scripts/convert2audio.py` 進行批次處理。此腳本會將指定資料夾中所有支援的影片格式（`.m2ts`, `.mp4`, `.mkv`, `.mov`, `.avi`, `.flv`, `.wmv`）轉換為 192kbps MP3 檔案。
+
+> **前置需求**：系統需安裝 `ffmpeg`（`brew install ffmpeg`）。
+
+### 基本用法
+
+```bash
+# 使用預設路徑 (輸入: ~/Downloads/video，輸出: ./data/mp3)
+python scripts/convert2audio.py
+
+# 指定輸入與輸出資料夾
+python scripts/convert2audio.py -i /path/to/videos -o /path/to/output
+
+# 強制覆蓋已存在的音檔
+python scripts/convert2audio.py -i /path/to/videos -o /path/to/output -f
+```
+
+### 參數說明
+
+| 參數 | 說明 | 預設值 |
+|------|------|--------|
+| `-i` / `--input` | 輸入影片資料夾路徑 | `~/Downloads/video` |
+| `-o` / `--output` | 輸出音檔資料夾路徑 | `./data/mp3` |
+| `-f` / `--force` | 強制覆蓋已存在的 MP3 檔案 | 否 |
+
+轉換完成後，即可將輸出的 MP3 傳入主程式進行轉錄：
+
+```bash
+python main.py --audio ./data/mp3/your_file.mp3
 ```

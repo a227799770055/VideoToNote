@@ -30,7 +30,9 @@ dependencies = [
     "yt-dlp",
     "requests",
     "google-generativeai",
-    "PyYAML"
+    "PyYAML",
+    "fastapi",
+    "uvicorn[standard]"
 ]
 
 [project.optional-dependencies]

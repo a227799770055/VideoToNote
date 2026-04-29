@@ -55,6 +55,8 @@ class SpeechTranscriber(BaseTranscriber):
             feature_extractor=self.processor.feature_extractor,
             torch_dtype=self.torch_dtype,
             device=self.device,
+            chunk_length_s=30,  # 支援長音檔的關鍵參數，將大於30秒的音檔自動切塊處理
+            batch_size=8,       # 可選：提升切塊音檔的處理速度 (依顯存大小可調整)
         )
         
         print("語音辨識模型載入完成")
@@ -75,10 +77,18 @@ class SpeechTranscriber(BaseTranscriber):
             language = language or config.DEFAULT_LANGUAGE
             
             print(f"開始轉錄音檔: {audio_path}")
+            
+            # 設定抗幻覺參數 (Anti-hallucination parameters)
+            generate_kwargs = {
+                "language": language,
+                "task": "transcribe",
+                "condition_on_prev_tokens": False
+            }
+                
             result = self.pipe(
                 audio_path,
                 return_timestamps=return_timestamps,
-                generate_kwargs={"language": language}
+                generate_kwargs=generate_kwargs
             )
             print("轉錄完成")
             return result
@@ -209,8 +219,15 @@ class FastSpeechTranscriber(BaseTranscriber):
             
             print(f"開始轉錄音檔: {audio_path}")
             
-            # 使用 pywhispercpp 進行轉錄
-            segments = self.model.transcribe(audio_path, language=language)
+            # 使用 pywhispercpp 進行轉錄參數
+            transcribe_kwargs = {
+                "language": language,
+                "no_context": True  # 關鍵：關閉上下文依賴，防止已經幻覺產生的字詞被餵給下一段，造成無窮迴圈
+            }
+            if language in ["chinese", "zh"]:
+                transcribe_kwargs["initial_prompt"] = "這是一段普通的中文語音紀錄，包含會議、課程或對話內容。"
+                
+            segments = self.model.transcribe(audio_path, **transcribe_kwargs)
             
             # 組織結果以匹配 SpeechTranscriber 的輸出格式
             full_text = ""
